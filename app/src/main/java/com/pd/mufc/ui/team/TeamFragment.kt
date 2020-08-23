@@ -12,11 +12,15 @@ import androidx.lifecycle.ViewModelProviders
 import com.pd.mufc.R
 import com.pd.mufc.data.MatchesRepository
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 class TeamFragment : Fragment() {
 
     private lateinit var teamViewModel: TeamViewModel
     private val TAG = TeamFragment::class.simpleName
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -27,6 +31,19 @@ class TeamFragment : Fragment() {
         Observable.just(1, 3, 5, 8, 10)
             .map { it * 5 }
             .subscribe { value -> Log.d("Print", "$value")}
+
+
+        compositeDisposable.add(Observable.fromArray("Foo", "Faa", "Hoo", "Soo", "Poo")
+            .subscribeOn(Schedulers.computation())
+            .map { it == it + "Bar" }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                {value -> Log.d("Print", "$value")},
+                {error -> Log.e("Print", "$error")},
+                {Log.d("Print", "Complete")},
+                {Log.d("Print", "onSubscribe()")}
+            )
+        )
 
         teamViewModel =
                 ViewModelProviders.of(this).get(TeamViewModel::class.java)
@@ -41,5 +58,12 @@ class TeamFragment : Fragment() {
             textView.text = it?.name
         })
         return root
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if(!compositeDisposable.isDisposed){
+            compositeDisposable.dispose()
+        }
     }
 }
